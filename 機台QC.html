@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <style>
+    body {
+      font-family:
+        "DFKai-SB", "標楷體", Arial, sans-serif;
+      max-width: 720px;
+      margin: 32px auto;
+      padding: 0 16px;
+      color: #222;
+      background: #F0F0F0;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+    }
+
+    select, input,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 6px;
+      padding: 10px;
+      font-size: 16px;
+      font-family:
+        "DFKai-SB", "標楷體", Arial,sans-serif;
+    }
+
+    input[type="file"] {
+      background: white;
+      border: 1px solid #aaa;
+    }
+    
+    button {
+      margin-top: 28px;
+      border: 0;
+      background: #1769aa;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+    
+    .message {
+      margin-top: 16px;
+      font-weight: 600;
+      color: #333;
+      white-space: pre-line;
+    }
+
+  </style>
+</head>
+
+<body>
+  <h1>機台QC填寫表</h1>
+  <form id="dataForm">
+    <label for="engineer">填寫工程師</label>
+    <input id="engineer" name="engineer" type="text" >
+
+    <label for="time">時間</label>
+    <input id="time" name="time" type="datetime-local">
+
+    <label for="centerName">中心名稱</label>
+    <select id="centerName" name="centerName">
+
+      <option value="">
+        載入中心中...
+      </option>
+    </select>
+    
+    <label for="machine">機台</label>
+    <select id="machine" name="machine">
+
+      <option value="">
+        請先選擇中心
+      </option>
+    </select>
+
+    <label for="qc1">QC數值1</label>
+    <input id="qc1" name="qc1" type="number" step="any">
+
+    <label for="qc2">QC數值2</label>
+    <input id="qc2" name="qc2" type="number" step="any">
+
+    <label for="qc3">QC數值3</label>
+    <input id="qc3" name="qc3" type="number" step="any">
+
+
+    <label for="qc4">QC數值4</label>
+    <input id="qc4" name="qc4" type="number" step="any">
+
+    <label for="qc5">QC數值5</label>
+    <input id="qc5" name="qc5" type="number" step="any">
+
+
+    <!-- 照片1 -->
+    <label for="photo1">機台照片1（產編</label>
+    <input type="file" id="photo1" accept="image/*" capture="environment">
+
+
+    <!-- 照片2 -->
+    <label for="photo2">機台照片2（正面</label>
+    <input type="file" id="photo2" accept="image/*" capture="environment">
+
+    <!-- 照片3 -->
+    <label for="photo3">機台照片3（內部</label>
+    <input type="file" id="photo3" accept="image/*" capture="environment">
+
+
+    <!-- 只需要一個送出按鈕 -->
+    <button id="submitButton" type="button" onclick="handleSubmit()">
+      送出
+    </button>
+
+  </form>
+
+  <div id="message" class="message" ></div>
+  <script>
+
+    let machinesByCenter = {};
+    const centerSelect =
+      document.getElementById('centerName');
+    const machineSelect =
+      document.getElementById('machine');
+    const form =
+      document.getElementById('dataForm');
+    const message =
+      document.getElementById('message');
+    const submitButton =
+      document.getElementById('submitButton');
+    
+    // --------------------- 載入網頁 ---------------------
+
+    window.onload = function () {
+      message.textContent =
+        '載入中心與機台資料中...';
+      google.script.run
+        .withSuccessHandler(initOptions)
+        .withFailureHandler(showError)
+        .getFormOptions();
+    };
+    
+    function initOptions(options) {
+      machinesByCenter =
+        options.machinesByCenter || {};
+      const centers =
+        options.centers || [];
+        centerSelect.innerHTML = '';
+      const defaultOption =
+        document.createElement('option');
+        defaultOption.value = '';
+      defaultOption.textContent =
+        '請選擇中心';
+      centerSelect.appendChild(
+        defaultOption
+      );
+      centers.forEach(
+        function(centerName) {
+          const option =
+            document.createElement('option');
+          option.value =
+            centerName;
+          option.textContent =
+            centerName;
+          centerSelect.appendChild(
+            option
+          );
+        }
+      );
+
+      if (centers.length === 0) {
+        message.textContent =
+          '沒有讀到中心資料，請確認指定分頁的 A 欄是中心名稱、B 欄是機台。';
+      } else {
+        message.textContent = '';
+      }
+    }
+
+    // --------------------- 選擇中心後更新機台 ---------------------
+
+    centerSelect.addEventListener(
+      'change',
+      function () {
+        const centerName =
+          centerSelect.value.trim();
+        machineSelect.innerHTML = '';
+        const defaultOption =
+          document.createElement('option');
+          defaultOption.value = '';
+        defaultOption.textContent =
+          centerName
+          ? '請選擇機台'
+          : '請先選擇中心';
+        machineSelect.appendChild(
+          defaultOption
+        );
+        if (!centerName) {
+          return;
+        }
+        const machines =
+          machinesByCenter[centerName] || [];
+        machines.forEach(
+          function(machine) {
+            const option =
+              document.createElement('option');
+            option.value =
+              machine;
+            option.textContent =
+              machine;
+            machineSelect.appendChild(
+              option
+            );
+          }
+        );
+      }
+    );
+
+
+    // --------------------- 檢查機台是否填寫過 ---------------------
+
+    machineSelect.addEventListener(
+      'change',
+      function () {
+        const centerName =
+          centerSelect.value.trim();
+        const machine =
+          machineSelect.value.trim();
+
+        if (!centerName || !machine) {
+          return;
+        }
+
+        message.textContent =
+          '檢查機台是否已填寫...';
+
+        google.script.run
+          .withSuccessHandler(
+            function (checkResult) {
+              if (checkResult && checkResult.exists) {
+                message.textContent =
+                  '提醒：這台機台已經填寫過。\n\n' + 
+                  '中心名稱：' + centerName + '\n' +
+                  '機台：' + machine + '\n' + 
+                  '上次填寫時間：' + checkResult.time + '\n' +
+                  '上次填寫工程師：' + checkResult.engineer;
+              } else {
+                message.textContent = '';
+              }
+            }
+          )
+          .withFailureHandler(showError)
+          .checkMachineSubmitted(
+            centerName,
+            machine
+          );
+
+      }
+    );
+
+
+    // --------------------- 單張照片上傳 ---------------------
+    function uploadOnePhoto( file, centerName, machine, photoNumber) {
+      return new Promise(
+        function(resolve, reject) {
+          if (!file) {
+            resolve('');
+            return;
+          }
+          
+          const reader =
+            new FileReader();
+          
+          reader.onload =
+            function(e) {
+              const base64Data =
+                e.target.result
+                  .split(',')[1];
+              google.script.run
+                
+                .withSuccessHandler(  
+                  function(photoUrl) {
+                    resolve(photoUrl);
+                  }
+                )
+                .withFailureHandler(
+                  function(error) {
+                    reject(error);
+                  }
+                )
+                .uploadPhoto(
+                  base64Data,
+                  file.name,
+                  file.type,
+                  centerName,
+                  machine,
+                  photoNumber
+                );
+
+            };
+          
+          reader.onerror =
+            function() {
+              reject(
+                new Error(
+                  '照片' + photoNumber + '讀取失敗'
+                )
+              );
+            };
+          
+          reader.readAsDataURL(file);
+        }
+      );
+    }
+
+    // --------------------- 送出 ---------------------
+    async function handleSubmit() {
+      try {
+        const engineer =
+          document
+            .getElementById('engineer')
+            .value
+            .trim();
+        
+        const time =
+          document
+            .getElementById('time')
+            .value
+            .trim();
+
+        const centerName =
+          centerSelect
+            .value
+            .trim();
+
+        const machine =
+          machineSelect
+            .value
+            .trim();
+
+        const photo1 =
+          document
+            .getElementById('photo1')
+            .files[0];
+
+        const photo2 =
+          document
+            .getElementById('photo2')
+            .files[0];
+
+        const photo3 =
+          document
+            .getElementById('photo3')
+            .files[0];
+
+        // 避免重複按送出
+
+        submitButton.disabled = true;
+        message.textContent =
+          '照片上傳中，請稍候...';
+
+        const photoUrls =
+          await Promise.all([
+            uploadOnePhoto(
+              photo1, centerName, machine, 1
+            ),
+            uploadOnePhoto(
+              photo2, centerName, machine, 2
+            ),
+            uploadOnePhoto(
+              photo3, centerName, machine, 3
+            )
+          ]);
+
+        message.textContent =
+          '照片上傳完成，正在寫入資料...';
+
+        const formData = {
+          engineer: engineer,
+          time: time,
+          centerName: centerName,
+          machine: machine,
+          qc1:
+            document
+              .getElementById('qc1')
+              .value
+              .trim(),
+          qc2:
+            document
+              .getElementById('qc2')
+              .value
+              .trim(),
+          qc3:
+            document
+              .getElementById('qc3')
+              .value
+              .trim(),
+          qc4:
+            document
+              .getElementById('qc4')
+              .value
+              .trim(),
+          qc5:
+            document
+              .getElementById('qc5')
+              .value
+              .trim(),
+          photoUrl1:
+            photoUrls[0],
+          photoUrl2:
+            photoUrls[1],
+          photoUrl3:
+            photoUrls[2]
+        };
+
+        google.script.run
+          .withSuccessHandler(
+            function(result) {
+              message.textContent =
+                result && result.message
+                  ? result.message
+                  : '填寫完成，資料已送出。';
+              
+              form.reset();
+              resetMachineOptions();
+              submitButton.disabled =
+                false;
+            }
+          )
+
+          .withFailureHandler(
+            function(error) {
+              showError(error);
+              submitButton.disabled =
+                false;
+            }
+          )
+
+          .submitForm(formData);
+      } catch (err) {
+        message.textContent =
+          '照片上傳失敗：' +
+          (
+            err && err.message
+            ? err.message
+            : String(err)
+          );
+        
+        submitButton.disabled =
+          false;
+      }
+    }
+
+    // --------------------- 重設機台選單 ---------------------
+    function resetMachineOptions() {
+      machineSelect.innerHTML = '';
+      const option =
+        document.createElement('option');
+      option.value = '';
+      option.textContent =
+        '請先選擇中心';
+      machineSelect.appendChild(
+        option
+      );
+    }
+
+    // --------------------- 顯示錯誤 --------------------- 
+    function showError(error) {
+      const errorMessage =
+        error && error.message
+        ? error.message
+        : String(error);
+      
+      message.textContent =
+        '錯誤：' + errorMessage;
+    }
+
+  </script>
+
+</body>
+
+</html>
