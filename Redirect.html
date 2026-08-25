@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.65);
+      font-family: "DFKai-SB", "標楷體", Arial, sans-serif;
+    }
+
+    .dialog {
+      width: 82%;
+      max-width: 360px;
+      background: #fff;
+      border-radius: 22px;
+      padding: 32px 24px 20px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .title {
+      color: #666;
+      font-size: 20px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    button {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      font-size: 22px;
+      padding: 14px 0;
+      font-family: "DFKai-SB", "標楷體", Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .cancel {
+      color: #111;
+    }
+
+    .open {
+      color: #31c263;
+    }
+  </style>
+</head>
+<body>
+  <div class="dialog">
+    <div class="title">
+      此連結將開啟<br>
+      機台QC填寫表
+    </div>
+
+    <div class="actions">
+      <button class="cancel" onclick="cancelOpen()">取消</button>
+      <button class="open" onclick="openForm()">開啟</button>
+    </div>
+  </div>
+
+  <script>
+    const formUrl = 'https://script.google.com/macros/s/AKfycbzQt7F8IoOvy8hiUla44MxvYUYAM5jqrdo9zNXJWZ0j7p7UQurADcHlpd9Zt4tPpSnnSw/exec';
+
+    function openForm() {
+      window.location.href = formUrl;
+    }
+
+    function cancelOpen() {
+      document.body.innerHTML = '';
+    }
+  </script>
+</body>
+</html>
